@@ -107,26 +107,57 @@ in defaults, or leave the placeholders and configure everything from the page.
 
 ---
 
+## Web installer (browser flashing)
+
+Live installer page:
+
+```
+https://bytebleed2025-star.github.io/A12E-SCALE-MONITOR/install/
+```
+
+It uses [ESP Web Tools](https://esphome.github.io/esp-web-tools/) and flashes the
+merged factory image over USB from desktop Chrome/Edge — no esptool or Python on
+the customer's PC.
+
+Release a new firmware with one command:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\release-installer.ps1 -Version 1.2.1
+```
+
+It bumps `FW_VERSION`, builds `esp32dev`, updates the installer binary/manifest,
+commits, and pushes. GitHub Pages redeploys automatically.
+
+Useful flags:
+
+- `-SkipBuild` — reuse the last `.pio` build
+- `-SkipVersionBump` — keep the version already in `src/main.cpp`
+- `-NoPush` — commit locally without pushing
+
+A full browser install erases NVS, so the license and saved settings must be
+re-entered afterwards.
+
+---
+
 ## Build & upload
 
-Open **this folder** (`esp32_min_web`) in VS Code + PlatformIO, or use the
-terminal:
+Open this repo in VS Code + PlatformIO, or use the terminal:
 
 ```bash
 # Build
-pio run -d esp32_min_web
+pio run
 
 # Upload firmware (no filesystem upload needed)
-pio run -d esp32_min_web -t upload
+pio run -t upload
 
 # Serial monitor
-pio device monitor -d esp32_min_web
+pio device monitor
 ```
 
 The file you distribute to customers is:
 
 ```
-esp32_min_web/.pio/build/esp32dev/firmware.bin
+.pio/build/esp32dev/firmware.bin
 ```
 
 > Ship **only** this `.bin` (or the board pre-flashed). Never ship the source
@@ -292,7 +323,7 @@ is entered.
 4. For a permanent key, generate one offline:
 
    ```bash
-   node esp32_min_web/tools/make_license.js A12E-A1B2C3D4E5F6
+   node tools/make_license.js A12E-A1B2C3D4E5F6
    ```
 
    Copy the **third column** (the long key). Or use the online order page at
@@ -566,7 +597,7 @@ so line noise cannot corrupt the displayed weight.
 ## Project layout
 
 ```
-esp32_min_web/
+.
 â”œâ”€â”€ platformio.ini            # standalone build config (no lib_deps)
 â”œâ”€â”€ include/
 â”‚   â”œâ”€â”€ config.h              # AP defaults, pins, timing, cloud interval
@@ -592,10 +623,10 @@ esp32_min_web/
 â””â”€â”€ README.md
 ```
 
-Related folders in the repository:
+The license server and Google Sheets logger are separate projects:
 
-- `../license-server` â€” Cloudflare Worker + D1 activation site
-- `../google-sheets` â€” Apps Script logger
+- `LICENSE-SERVER` â€” Cloudflare Worker + D1 activation site
+- `google-sheets` â€” Apps Script logger
 
 No `data/` folder and no `uploadfs`: the web UI is compiled into the
 firmware. Settings live in NVS and are edited from the Config tab.

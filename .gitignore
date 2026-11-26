@@ -7,3 +7,17 @@ include/sta_secrets.h
 # Local keypair backup / generated licenses
 tools/*.key
 tools/licenses.txt
+
+# PlatformIO
+.pio/
+.pioenvs/
+.piolibdeps/
+.vscode/
+
+# Build artifacts
+*.bin
+*.elf
+*.map
+
+# Installer firmware is committed on purpose (served by GitHub Pages)
+!docs/install/firmware/*.bin
