@@ -68,21 +68,23 @@ static const char MONITOR_BODY[] = R"HTML(
             <button class="btn" id="activateBtn" type="button" onclick="activateLicense()">Activate</button>
             <div class="msg" id="activateMsg"></div>
 
-            <div class="divider"></div>
+            <div id="getKeyArea" style="display:none">
+              <div class="divider"></div>
 
-            <div class="field"><span>Need a key? Activation page</span>
-              <div class="row">
-                <input id="buyUrl" readonly
-                       value="https://a12e-license.esp32dev-by-shd.workers.dev/a12escales">
-                <button class="btn secondary small" type="button"
-                        onclick="copyBuyLink(this)">Copy link</button>
+              <div class="field"><span>Get a license key</span>
+                <div class="row">
+                  <input id="buyUrl" readonly
+                         value="https://embedded-devlicense.esp32dev-by-shd.workers.dev/a12escales">
+                  <button class="btn secondary small" type="button"
+                          onclick="copyBuyLink(this)">Copy link</button>
+                </div>
               </div>
+              <p class="note">
+                Disconnect from this WiFi first and open the link with mobile data.
+                The page needs internet. Then reconnect to
+                <strong>A12E_SCALE_MONITOR</strong> and paste the key here.
+              </p>
             </div>
-            <p class="note">
-              Disconnect from this WiFi first and open the link with mobile data.
-              The page needs internet. Then reconnect to
-              <strong>A12E_SCALE_MONITOR</strong> and paste the key here.
-            </p>
           </div>
 
           <div class="ok-box" id="licensedMsg">Licensed to this device. Thank you!</div>
@@ -146,6 +148,9 @@ static const char MONITOR_SCRIPT[] = R"JS(
         'TRIAL ENDED. Enter an activation key below to continue using this device.';
 
       if (d.activationUrl) $('buyUrl').value = d.activationUrl;
+
+      // The "get a license key" block only appears after the trial ends.
+      $('getKeyArea').style.display = expired ? 'block' : 'none';
 
       if (d.license === 'licensed') {
         pill.textContent = 'Licensed';

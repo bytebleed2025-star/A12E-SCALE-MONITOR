@@ -43,7 +43,7 @@
 #include "debug_page.h"
 #include "config_page.h"
 
-#define FW_VERSION "1.2.0"
+#define FW_VERSION "1.2.1"
 
 // ============================================================================
 // Globals

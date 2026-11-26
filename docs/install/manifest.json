@@ -1,12 +1,12 @@
 ﻿{
     "name":  "A12E Scale Monitor",
-    "version":  "1.2.0",
+    "version":  "1.2.1",
     "builds":  [
                    {
                        "chipFamily":  "ESP32",
                        "parts":  [
                                      {
-                                         "path":  "firmware/A12E-Scale-Monitor-v1.2.0-factory.bin",
+                                         "path":  "firmware/A12E-Scale-Monitor-v1.2.1-factory.bin",
                                          "offset":  0
                                      }
                                  ]
