@@ -1,0 +1,48 @@
+# ============================================================================
+#  A12E Scale Monitor - ESP-IDF production build defaults
+#
+#  Branch: feature/secure-boot-a12e
+#  Pilot configuration only. Do NOT burn eFuses on a production board.
+#
+#  Secure Boot v2 + Flash Encryption cannot be enabled over OTA. Read
+#  secure/README.md before flashing anything.
+# ============================================================================
+
+# --- Arduino as an ESP-IDF component ---------------------------------------
+CONFIG_AUTOSTART_ARDUINO=y
+CONFIG_FREERTOS_HZ=1000
+
+# --- Flash / partition layout ----------------------------------------------
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+# Secure Boot v2 + flash encryption makes the bootloader ~44 KB, which no
+# longer fits below the default 0x8000 partition table offset.
+CONFIG_PARTITION_TABLE_OFFSET=0x10000
+CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y
+
+# --- Secure Boot v2 --------------------------------------------------------
+# Secure Boot v2 on the classic ESP32 requires ECO V3 or newer.
+CONFIG_ESP32_REV_MIN_3=y
+CONFIG_SECURE_BOOT=y
+CONFIG_SECURE_BOOT_V2_ENABLED=y
+CONFIG_SECURE_SIGNED_APPS=y
+CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME=y
+CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES=y
+CONFIG_SECURE_BOOT_SIGNING_KEY="secure/keys/secure_boot_signing_key.pem"
+
+# --- Flash Encryption ------------------------------------------------------
+# DEVELOPMENT mode keeps UART re-flashing possible during the pilot.
+# Switch to RELEASE only after signed OTA has been proven on a spare board.
+CONFIG_SECURE_FLASH_ENC_ENABLED=y
+CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT=y
+
+# --- NVS encryption --------------------------------------------------------
+# nvs_keys is protected by flash encryption (see partitions.csv).
+CONFIG_NVS_ENCRYPTION=y
+
+# --- mbedTLS PSK -----------------------------------------------------------
+# NetworkClientSecure (WiFiClientSecure) compiles its SSL client only when
+# PSK cipher suites are enabled. Sheets upload depends on it.
+CONFIG_MBEDTLS_PSK_MODES=y
+CONFIG_MBEDTLS_KEY_EXCHANGE_PSK=y

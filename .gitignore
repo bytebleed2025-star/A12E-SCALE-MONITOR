@@ -14,10 +14,22 @@ tools/licenses.txt
 .piolibdeps/
 .vscode/
 
+# ESP-IDF production build (Secure Boot branch)
+build/
+managed_components/
+dependencies.lock
+sdkconfig
+sdkconfig.old
+components/
+
+# Secure Boot signing keys - never commit
+secure/keys/
+
 # Build artifacts
 *.bin
 *.elf
 *.map
+build-pilot.log
 
 # Installer firmware is committed on purpose (served by GitHub Pages)
 !docs/install/firmware/*.bin
