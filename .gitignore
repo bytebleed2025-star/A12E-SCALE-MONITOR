@@ -29,7 +29,7 @@ secure/keys/
 *.bin
 *.elf
 *.map
-build-pilot.log
+build-*.log
 
 # Installer firmware is committed on purpose (served by GitHub Pages)
 !docs/install/firmware/*.bin

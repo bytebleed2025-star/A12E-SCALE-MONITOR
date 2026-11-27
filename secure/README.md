@@ -132,6 +132,42 @@ Boot tests on this board:
 
 - The signed build was then re-flashed over UART and booted normally.
 
+### Signed OTA test
+
+The app exposes `POST /api/ota`. An authorized AP client must send:
+
+```text
+X-Requested-With: A12E
+Content-Type: multipart/form-data
+```
+
+Example:
+
+```bash
+curl -H "X-Requested-With: A12E" \
+     -F "firmware=@build/a12e_secure.bin" \
+     http://192.168.4.1/api/ota
+```
+
+The running app writes the image to the inactive OTA slot and reboots. The
+bootloader verifies RSA-PSS before running it; an unsigned or wrong-key image
+is rejected and the previous slot stays bootable.
+
+The pilot PC has no Wi-Fi adapter, so the HTTP path was not exercised from it.
+The slot switch was tested directly instead:
+
+- wrote the signed image to `ota_1` (`0x1c0000`)
+- wrote `otadata` with `ota_seq = 2`, `ota_state = VALID`
+- boot log:
+
+  ```text
+  secure_boot_v2: Signature verified successfully!
+  boot: Loaded app from partition at offset 0x1c0000
+  [SYSTEM] Running from ota_1 at 0x1c0000
+  [NET] AP IP: 192.168.4.1
+  [WEB] Server started on port 80
+  ```
+
 ### Restoring the normal A12E firmware
 
 The stock PlatformIO image is unsigned, so it will not boot on this board. To
@@ -158,9 +194,10 @@ UART download is still enabled, so recovery with a signed image always works.
 
 ## 8. Next step
 
-The pilot board is already Secure Boot locked. The remaining decisions are:
+The pilot board is Secure Boot locked and signed boot from `ota_1` is verified.
+The remaining decisions are:
 
-1. Test a signed OTA update to `ota_1`.
+1. Exercise the HTTP `/api/ota` endpoint once the board is on a reachable LAN.
 2. Decide whether to enable flash encryption on this board (permanent) or keep
    it off.
 3. Use a different board for any unsigned/stock firmware testing.

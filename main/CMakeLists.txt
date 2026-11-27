@@ -15,4 +15,5 @@ idf_component_register(
         "../include"
     REQUIRES
         arduino
+        app_update
 )

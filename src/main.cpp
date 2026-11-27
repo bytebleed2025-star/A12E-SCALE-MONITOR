@@ -28,6 +28,8 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WebServer.h>
+#include <Update.h>
+#include <esp_ota_ops.h>
 #include <math.h>
 #include <string.h>
 
@@ -464,6 +466,72 @@ static void handleSheetTest() {
   server.send(200, "application/json", body);
 }
 
+// ============================================================================
+// Signed OTA upload (pilot)
+// ============================================================================
+//
+// POST a signed .bin to /api/ota with:
+//   X-Requested-With: A12E
+//
+// The running app writes the image to the inactive OTA slot and reboots.
+// Secure Boot verifies the signature on the next boot, so an unsigned or
+// wrong-key image is rejected by the bootloader and never runs.
+
+static bool otaAllowed = false;
+
+static void handleOtaUpload() {
+  HTTPUpload &upload = server.upload();
+
+  if (upload.status == UPLOAD_FILE_START) {
+    otaAllowed = isConfigRequest();
+    if (!otaAllowed) {
+      LOG.println("[OTA] Rejected upload (not an authorized AP client)");
+      return;
+    }
+
+    LOG.printf("[OTA] Receiving %s (%u bytes)\n",
+               upload.filename.c_str(),
+               static_cast<unsigned>(upload.totalSize));
+
+    if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
+      LOG.println("[OTA] Update.begin failed");
+      Update.printError(LOG);
+      otaAllowed = false;
+    }
+  } else if (upload.status == UPLOAD_FILE_WRITE) {
+    if (!otaAllowed) return;
+    if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
+      LOG.println("[OTA] Update.write failed");
+      Update.printError(LOG);
+      otaAllowed = false;
+    }
+  } else if (upload.status == UPLOAD_FILE_END) {
+    if (!otaAllowed) return;
+    if (Update.end(true)) {
+      LOG.printf("[OTA] Image accepted, %u bytes\n",
+                 static_cast<unsigned>(upload.totalSize));
+    } else {
+      LOG.println("[OTA] Update.end failed");
+      Update.printError(LOG);
+    }
+  } else if (upload.status == UPLOAD_FILE_ABORTED) {
+    Update.abort();
+    otaAllowed = false;
+    LOG.println("[OTA] Upload aborted");
+  }
+}
+
+static void handleOtaDone() {
+  if (Update.hasError()) {
+    server.send(500, "application/json", "{\"ok\":false}");
+    return;
+  }
+
+  server.send(200, "application/json", "{\"ok\":true}");
+  delay(300);
+  ESP.restart();
+}
+
 static void handleRoot() {
   const String page =
       renderPage("A12E Scale Monitor", "monitor", MONITOR_BODY, MONITOR_SCRIPT);
@@ -493,6 +561,13 @@ void setup() {
                  "  TX=GPIO" + String(SCALE_TX_PIN) +
                  "  " + String(SCALE_BAUD_RATE) + " 8N1");
 
+  const esp_partition_t *runningPart = esp_ota_get_running_partition();
+  if (runningPart != nullptr) {
+    LOG.printf("[SYSTEM] Running from %s at 0x%06x\n",
+               runningPart->label,
+               static_cast<unsigned>(runningPart->address));
+  }
+
   ScaleSerial.begin(SCALE_BAUD_RATE, SERIAL_8N1, SCALE_RX_PIN, SCALE_TX_PIN);
 
   settingsBegin();
@@ -511,6 +586,7 @@ void setup() {
   server.on("/api/settings", HTTP_POST, handleSettingsPost);
   server.on("/api/wifi/scan", HTTP_POST, handleScan);
   server.on("/api/sheets/test", HTTP_POST, handleSheetTest);
+  server.on("/api/ota", HTTP_POST, handleOtaDone, handleOtaUpload);
   server.on("/favicon.ico", HTTP_GET, []() { server.send(204); });
   server.onNotFound(handleNotFound);
   server.begin();
